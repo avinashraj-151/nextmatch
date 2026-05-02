@@ -1,26 +1,343 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@layer utilities {
+  .premium-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(192, 38, 211, 0.45) transparent;
+    scroll-behavior: smooth;
+  }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  .premium-scrollbar::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  .premium-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+    margin-block: 0.25rem;
+  }
+
+  .premium-scrollbar::-webkit-scrollbar-thumb {
+    background-image: linear-gradient(180deg,
+        #f43f5e 0%,
+        #c026d3 50%,
+        #7c3aed 100%);
+    background-clip: content-box;
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+    transition: filter 200ms ease, border-width 200ms ease;
+  }
+
+  .premium-scrollbar::-webkit-scrollbar-thumb:hover {
+    filter: brightness(1.05) saturate(1.1);
+    border-width: 2px;
+  }
+
+  .premium-scrollbar::-webkit-scrollbar-thumb:active {
+    filter: brightness(0.95);
+  }
+
+  .premium-scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  .premium-shimmer {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .premium-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(110deg,
+        transparent 25%,
+        rgba(244, 63, 94, 0.18) 40%,
+        rgba(192, 38, 211, 0.22) 50%,
+        rgba(124, 58, 237, 0.18) 60%,
+        transparent 75%);
+    transform: translateX(-100%);
+    animation: premium-shimmer 1.8s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  @keyframes premium-shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .premium-shimmer::after {
+      animation: none;
+      opacity: 0.5;
+      transform: translateX(0);
+    }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Premium Sonner toast polish */
+[data-sonner-toaster] {
+  --width: 380px;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Reset Sonner defaults so our layout owns spacing and sizing */
+[data-sonner-toaster] [data-sonner-toast].cn-toast {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.875rem 2.5rem 0.875rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: rgba(255, 255, 255, 0.92);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  box-shadow:
+    0 18px 50px -18px rgba(124, 58, 237, 0.35),
+    0 8px 18px -12px rgba(244, 63, 94, 0.22),
+    0 0 0 1px rgba(15, 23, 42, 0.04);
+  color: #0f172a;
+  font-size: 0.95rem;
+  overflow: hidden;
+  transition:
+    transform 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 240ms ease,
+    box-shadow 240ms ease;
+}
+
+[data-sonner-toaster] [data-sonner-toast].cn-toast [data-icon] {
+  width: auto;
+  height: auto;
+  margin: 0;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+[data-sonner-toaster] [data-sonner-toast].cn-toast .cn-toast__icon {
+  width: auto;
+  height: auto;
+  margin: 0;
+}
+
+[data-sonner-toaster] [data-sonner-toast].cn-toast [data-content] {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding-top: 0.15rem;
+}
+
+[data-sonner-toaster] [data-sonner-toast].cn-toast .cn-toast__title,
+[data-sonner-toaster] [data-sonner-toast].cn-toast [data-title] {
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: #0f172a;
+}
+
+[data-sonner-toaster] [data-sonner-toast].cn-toast .cn-toast__description,
+[data-sonner-toaster] [data-sonner-toast].cn-toast [data-description] {
+  font-size: 0.825rem;
+  font-weight: 400;
+  line-height: 1.4;
+  color: #64748b;
+}
+
+/* Close button: top-right, square, subtle */
+[data-sonner-toaster] [data-sonner-toast].cn-toast [data-close-button],
+[data-sonner-toaster] [data-sonner-toast].cn-toast .cn-toast__close {
+  position: absolute !important;
+  top: 0.5rem !important;
+  right: 0.5rem !important;
+  left: auto !important;
+  transform: none !important;
+  display: grid !important;
+  place-items: center !important;
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  border: 0 !important;
+  border-radius: 0.5rem !important;
+  background: transparent !important;
+  color: #94a3b8 !important;
+  cursor: pointer !important;
+  transition: background-color 150ms ease, color 150ms ease !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast].cn-toast [data-close-button]:hover,
+[data-sonner-toaster] [data-sonner-toast].cn-toast .cn-toast__close:hover {
+  background: rgba(15, 23, 42, 0.06) !important;
+  color: #1f2937 !important;
+}
+
+[data-sonner-toaster] [data-sonner-toast].cn-toast [data-close-button] svg,
+[data-sonner-toaster] [data-sonner-toast].cn-toast .cn-toast__close svg {
+  width: 0.875rem;
+  height: 0.875rem;
+}
+
+/* Action / cancel buttons */
+[data-sonner-toaster] [data-sonner-toast].cn-toast [data-button],
+[data-sonner-toaster] [data-sonner-toast].cn-toast .cn-toast__action {
+  height: 2rem;
+  padding: 0 0.75rem;
+  border: 0;
+  border-radius: 0.5rem;
+  background-image: linear-gradient(to right,
+      #f43f5e 0%,
+      #c026d3 50%,
+      #7c3aed 100%);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 6px 14px -6px rgba(192, 38, 211, 0.45);
+  cursor: pointer;
+  transition: filter 150ms ease;
+}
+
+[data-sonner-toaster] [data-sonner-toast].cn-toast [data-button]:hover {
+  filter: brightness(1.08);
+}
+
+[data-sonner-toaster] [data-sonner-toast].cn-toast [data-cancel],
+[data-sonner-toaster] [data-sonner-toast].cn-toast .cn-toast__cancel {
+  height: 2rem;
+  padding: 0 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #374151;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* Left accent stripe per variant */
+[data-sonner-toaster] [data-sonner-toast].cn-toast::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-top-left-radius: inherit;
+  border-bottom-left-radius: inherit;
+  background: linear-gradient(180deg, #f43f5e 0%, #c026d3 50%, #7c3aed 100%);
+  opacity: 0.9;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="success"].cn-toast::before {
+  background: linear-gradient(180deg, #34d399 0%, #10b981 50%, #0d9488 100%);
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="error"].cn-toast::before {
+  background: linear-gradient(180deg, #fb7185 0%, #f43f5e 50%, #e11d48 100%);
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="warning"].cn-toast::before {
+  background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 50%, #f97316 100%);
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="loading"].cn-toast::before {
+  background: linear-gradient(180deg, #f43f5e 0%, #c026d3 50%, #7c3aed 100%);
+}
+
+/* ── Loading toast: layered tint + halo on icon + brand-tinted title + progress strip ── */
+[data-sonner-toaster] [data-sonner-toast][data-type="loading"].cn-toast {
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(244, 63, 94, 0.10) 0%, transparent 55%),
+    radial-gradient(120% 140% at 100% 0%, rgba(124, 58, 237, 0.10) 0%, transparent 55%),
+    linear-gradient(135deg, rgba(244, 63, 94, 0.05) 0%, rgba(192, 38, 211, 0.07) 50%, rgba(124, 58, 237, 0.05) 100%),
+    rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 24px 60px -22px rgba(124, 58, 237, 0.50),
+    0 12px 26px -14px rgba(244, 63, 94, 0.32),
+    0 0 0 1px rgba(192, 38, 211, 0.08);
+  padding-bottom: 1rem;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="loading"].cn-toast .cn-toast__icon > span,
+[data-sonner-toaster] [data-sonner-toast][data-type="loading"].cn-toast [data-icon] > span {
+  position: relative;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="loading"].cn-toast .cn-toast__icon > span::before,
+[data-sonner-toaster] [data-sonner-toast][data-type="loading"].cn-toast [data-icon] > span::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.55), rgba(192, 38, 211, 0.55), rgba(124, 58, 237, 0.55));
+  filter: blur(6px);
+  opacity: 0.55;
+  z-index: -1;
+  animation: cn-toast-halo 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="loading"].cn-toast .cn-toast__title,
+[data-sonner-toaster] [data-sonner-toast][data-type="loading"].cn-toast [data-title] {
+  background-image: linear-gradient(135deg, #be185d 0%, #a21caf 45%, #6d28d9 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+[data-sonner-toaster] [data-sonner-toast][data-type="loading"].cn-toast::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #f43f5e 22%,
+    #c026d3 50%,
+    #7c3aed 78%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  animation: cn-toast-progress 1.3s linear infinite;
+  border-bottom-right-radius: inherit;
+  box-shadow: 0 -1px 6px rgba(192, 38, 211, 0.45);
+  pointer-events: none;
+}
+
+@keyframes cn-toast-progress {
+  0% { background-position: 110% 0; }
+  100% { background-position: -110% 0; }
+}
+
+@keyframes cn-toast-halo {
+  0%, 100% { opacity: 0.35; transform: scale(0.96); }
+  50%      { opacity: 0.70; transform: scale(1.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-sonner-toaster] [data-sonner-toast].cn-toast {
+    transition: none;
+  }
+  [data-sonner-toaster] [data-sonner-toast][data-type="loading"].cn-toast::after {
+    animation: none;
+    background-image: linear-gradient(90deg, #f43f5e 0%, #c026d3 50%, #7c3aed 100%);
+    background-size: 100% 100%;
+  }
+  [data-sonner-toaster] [data-sonner-toast][data-type="loading"].cn-toast .cn-toast__icon > span::before,
+  [data-sonner-toaster] [data-sonner-toast][data-type="loading"].cn-toast [data-icon] > span::before {
+    animation: none;
+    opacity: 0.45;
+    transform: scale(1);
+  }
 }
