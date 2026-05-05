@@ -1,8 +1,9 @@
 import { Suspense } from "react"
-import { Eye, Heart, HeartHandshake, Sparkles } from "lucide-react"
+import { Eye, Heart, HeartHandshake } from "lucide-react"
 
+import BrandLoadingSplash from "@/components/component/BrandLoadingSplash"
 import ListsTab from "./ListTab"
-import MembersGrid, { MembersGridSkeleton, TAB_META } from "./MembersGrid"
+import MembersGrid, { TAB_META } from "./MembersGrid"
 
 const TAB_SUBTITLE = {
     source: "People you've shown interest in",
@@ -20,6 +21,18 @@ const TAB_TITLE = {
     source: "Members you liked",
     target: "Members who liked you",
     mutual: "Mutual matches",
+}
+
+const TAB_LOAD_PILL = {
+    source: "Gathering your hearts",
+    target: "Gathering your admirers",
+    mutual: "Gathering your matches",
+}
+
+const TAB_LOAD_CAPTION = {
+    source: "Pulling everyone you've shown interest in",
+    target: "Pulling everyone who's interested in you",
+    mutual: "Pulling people you've matched with",
 }
 
 const VALID_TABS = new Set(["source", "target", "mutual"])
@@ -60,8 +73,18 @@ export default async function ListsPage({ searchParams }) {
                     <ListsTab activeTab={activeTab} />
                 </header>
 
-                {/* ── Grid — wrapped in Suspense, skeleton shows while fetching ── */}
-                <Suspense fallback={<MembersGridSkeleton label={meta.fetchingLabel} />} >
+                {/* ── Grid — wrapped in Suspense, branded splash shows while fetching ── */}
+                <Suspense
+                    key={activeTab}
+                    fallback={(
+                        <BrandLoadingSplash
+                            variant="inline"
+                            pillLabel={TAB_LOAD_PILL[activeTab]}
+                            caption={TAB_LOAD_CAPTION[activeTab]}
+                            srLabel={meta.fetchingLabel}
+                        />
+                    )}
+                >
                     <MembersGrid activeTab={activeTab} meta={meta} />
                 </Suspense>
             </div>

@@ -83,6 +83,48 @@
       transform: translateX(0);
     }
   }
+
+  /* Brand-tinted shifting gradient for clipped text (loading wordmark). */
+  .brand-text-shimmer {
+    background-image: linear-gradient(110deg,
+        #e11d48 0%,
+        #c026d3 25%,
+        #7c3aed 50%,
+        #c026d3 75%,
+        #e11d48 100%);
+    background-size: 220% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: brand-text-shimmer 3.2s linear infinite;
+  }
+
+  @keyframes brand-text-shimmer {
+    0%   { background-position: 0% 50%; }
+    100% { background-position: 220% 50%; }
+  }
+
+  /* Indeterminate progress: 30% gradient pill sliding inside its track. */
+  .brand-progress-slide {
+    animation: brand-progress-slide 1.6s cubic-bezier(0.65, 0.05, 0.36, 1) infinite;
+  }
+
+  @keyframes brand-progress-slide {
+    0%   { transform: translateX(-110%); }
+    100% { transform: translateX(330%); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .brand-text-shimmer {
+      animation: none;
+      background-position: 0% 50%;
+    }
+
+    .brand-progress-slide {
+      animation: none;
+      transform: translateX(0);
+    }
+  }
 }
 
 /* Premium Sonner toast polish */
