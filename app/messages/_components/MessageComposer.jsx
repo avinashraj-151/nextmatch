@@ -7,10 +7,16 @@ import { cn } from "@/lib/utils"
 
 const MAX_ROWS = 6
 const LINE_HEIGHT_PX = 22
+// Send a "typing:true" ping at most once every 2s while the user
+// keeps typing. The receiver auto-hides after 5s of silence, so this
+// keeps the indicator alive without spamming the server.
+const TYPING_THROTTLE_MS = 2000
 
-function MessageComposer({ peerName, onSend }) {
+function MessageComposer({ peerName, onSend, onTyping }) {
     const [text, setText] = useState("")
     const textareaRef = useRef(null)
+    // Last time we emitted "typing:true" — used for throttling.
+    const lastTypingPingAtRef = useRef(0)
     const trimmed = text.trim()
     const canSend = trimmed.length > 0
 
@@ -23,10 +29,29 @@ function MessageComposer({ peerName, onSend }) {
         el.style.height = `${next}px`
     }, [text])
 
+    // On unmount (navigating away mid-type), tell the peer we stopped.
+    useEffect(function clearTypingOnUnmount() {
+        return function teardown() {
+            if (lastTypingPingAtRef.current > 0) {
+                onTyping?.(false)
+            }
+        }
+        // onTyping is captured at unmount time via closure — fine for a
+        // best-effort cleanup ping.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    const emitTypingFalse = () => {
+        if (lastTypingPingAtRef.current === 0) return
+        lastTypingPingAtRef.current = 0
+        onTyping?.(false)
+    }
+
     function handleSubmit() {
         if (!canSend) return
         onSend(trimmed)
         setText("")
+        emitTypingFalse()
     }
 
     function handleFormSubmit(event) {
@@ -42,7 +67,25 @@ function MessageComposer({ peerName, onSend }) {
     }
 
     function handleTextChange(event) {
-        setText(event.target.value)
+        const next = event.target.value
+        setText(next)
+
+        if (!onTyping) return
+
+        // Empty input → immediately tell peer we stopped (covers Backspace-to-empty).
+        if (next.trim().length === 0) {
+            emitTypingFalse()
+            return
+        }
+
+        const now = Date.now()
+        if (now - lastTypingPingAtRef.current < TYPING_THROTTLE_MS) return
+        lastTypingPingAtRef.current = now
+        onTyping(true)
+    }
+
+    function handleBlur() {
+        emitTypingFalse()
     }
 
     return (
@@ -64,6 +107,7 @@ function MessageComposer({ peerName, onSend }) {
                     value={text}
                     onChange={handleTextChange}
                     onKeyDown={handleKeyDown}
+                    onBlur={handleBlur}
                     placeholder={`Message ${peerName.split(" ")[0]}…`}
                     className="block max-h-40 min-h-9 w-full resize-none border-0 bg-transparent px-1 py-1.5 text-[14.5px] leading-[1.45] text-gray-900 outline-none placeholder:text-gray-400"
                 />
@@ -79,6 +123,7 @@ function MessageComposer({ peerName, onSend }) {
                             ? "bg-linear-to-br from-rose-500 via-fuchsia-600 to-violet-600 text-white shadow-md shadow-fuchsia-900/25 hover:shadow-lg hover:shadow-fuchsia-900/30 hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
                             : "bg-gray-100 text-gray-400",
                     )}
+                    
                 >
                     <SendHorizontal className="size-4" />
                 </button>

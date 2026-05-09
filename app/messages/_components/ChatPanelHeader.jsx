@@ -37,14 +37,14 @@ function ChatPanelHeader({ conversation, onBack }) {
                 <p className="truncate text-sm font-semibold tracking-tight text-gray-900">
                     {user.name}
                 </p>
-                <p
+                {/* <p
                     className={cn(
                         "truncate text-[11.5px]",
                         user.online ? "font-medium text-emerald-600" : "text-gray-500",
                     )}
                 >
                     {formatPresence(user)}
-                </p>
+                </p> */}
             </div>
         </header>
     )

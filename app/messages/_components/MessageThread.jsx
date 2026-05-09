@@ -93,16 +93,6 @@ function TypingIndicator({ peer }) {
     )
 }
 
-function MatchPill({ matchedAt, peerName }) {
-    return (
-        <div className="my-2 flex justify-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/85 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-fuchsia-700 ring-1 ring-fuchsia-200/70 shadow-sm shadow-fuchsia-900/5 backdrop-blur">
-                <Sparkles className="size-3" />
-                You matched with {peerName.split(" ")[0]} on {format(new Date(matchedAt), "MMM d")}
-            </span>
-        </div>
-    )
-}
 
 function DateDivider({ sentAt }) {
     return (
@@ -116,8 +106,8 @@ function DateDivider({ sentAt }) {
     )
 }
 
-function MessageThread({ conversation }) {
-    const { messages, user, isTyping, matchedAt } = conversation
+function MessageThread({ conversation, onEditMessage, onDeleteMessage }) {
+    const { messages, user, isTyping } = conversation
     const scrollerRef = useRef(null)
     const items = useMemo(function memoItems() { return buildItems(messages) }, [messages])
 
@@ -134,7 +124,7 @@ function MessageThread({ conversation }) {
             className="premium-scrollbar relative flex-1 min-h-0 overflow-y-auto bg-linear-to-b from-fuchsia-50/30 via-white to-white"
         >
             <div className="mx-auto flex w-full max-w-3xl flex-col gap-1.5 px-4 py-6 sm:px-6">
-                <MatchPill matchedAt={matchedAt} peerName={user.name} />
+                {/* <MatchPill matchedAt={matchedAt} peerName={user.name} /> */}
 
                 {items.map(function renderItem(item) {
                     if (item.kind === "divider") {
@@ -151,6 +141,8 @@ function MessageThread({ conversation }) {
                                 item.message._position === "last" ||
                                 item.message._position === "single"
                             }
+                            onEdit={onEditMessage}
+                            onDelete={onDeleteMessage}
                         />
                     )
                 })}

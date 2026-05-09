@@ -6,7 +6,6 @@ import {
     CalendarHeart,
     Flag,
     MapPin,
-    MessageCircleHeart,
     Sparkles,
     Venus,
 } from "lucide-react"
@@ -18,6 +17,8 @@ import {
     isNewMember,
 } from "@/lib/utils"
 import ShareButton from "@/components/component/ShareButton"
+
+import MessageMemberButton from "./MessageMemberButton"
 
 const formatJoinedAgo = (date) => {
     if (!date) return null
@@ -97,10 +98,12 @@ export default function MemberSidebar({ member }) {
                                     {age}
                                 </span>
                             ) : null}
-                            <BadgeCheck
-                                className="size-5 shrink-0 text-white drop-shadow"
-                                aria-label="Verified profile"
-                            />
+                            {/* 
+                                <BadgeCheck
+                                    className="size-5 shrink-0 text-white drop-shadow"
+                                    aria-label="Verified profile"
+                                /> 
+                            */}
                         </h1>
                         {location ? (
                             <p className="mt-1 flex items-center gap-1 text-sm text-white/85">
@@ -130,24 +133,10 @@ export default function MemberSidebar({ member }) {
                     ) : null}
                 
                 
-                    <Link
-                        href={`/messages/${member.userId}`}
-                        className={cn(
-                            "group/cta relative inline-flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl px-4 py-3 text-sm font-semibold text-white outline-none",
-                            "bg-linear-to-r from-rose-600 via-fuchsia-600 to-violet-600",
-                            "shadow-lg shadow-fuchsia-900/20 transition-all duration-200",
-                            "hover:-translate-y-0.5 hover:shadow-xl hover:shadow-fuchsia-900/25",
-                            "active:translate-y-0",
-                            "focus-visible:ring-2 focus-visible:ring-fuchsia-500/50 focus-visible:ring-offset-2",
-                        )}
-                    >
-                        <MessageCircleHeart className="size-4" />
-                        <span>Message {firstName}</span>
-                        <span
-                            aria-hidden="true"
-                            className="pointer-events-none absolute inset-y-0 -left-full w-1/2 -skew-x-12 bg-white/20 transition-transform duration-700 group-hover/cta:translate-x-[300%]"
-                        />
-                    </Link>
+                    <MessageMemberButton
+                        otherUserId={member.userId}
+                        firstName={firstName}
+                    />
 
                     <div className="grid grid-cols-2 gap-2">
                         <ShareButton

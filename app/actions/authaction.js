@@ -68,6 +68,9 @@ export async function registerUser(data) {
             data: { name, email, passwordHash },
             select: { id: true, name: true, email: true },
         })
+        await prisma.member.create({
+            data: { userId: user.id, name: user.name },
+        })
 
         return { success: true, user }
     } catch (error) {

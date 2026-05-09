@@ -10,7 +10,6 @@ import ConversationRow from "./ConversationRow"
 const FILTERS = [
     { id: "all", label: "All" },
     { id: "unread", label: "Unread" },
-    { id: "online", label: "Online" },
 ]
 
 function matchesFilter(conversation, filter) {
@@ -19,40 +18,21 @@ function matchesFilter(conversation, filter) {
     return true
 }
 
-function matchesQuery(conversation, query) {
-    if (!query) return true
-    const haystack = [
-        conversation.user.name,
-        ...conversation.messages.map(function pickText(message) { return message.text }),
-    ]
-        .join(" ")
-        .toLowerCase()
-    return haystack.includes(query.toLowerCase())
-}
 
 function ConversationsRail({
     conversations,
     activeId,
     onSelect,
     query,
-    onQueryChange,
     filter,
     onFilterChange,
     className,
 }) {
     const visible = conversations.filter(function keep(conversation) {
-        return matchesFilter(conversation, filter) && matchesQuery(conversation, query)
+        return matchesFilter(conversation, filter) 
     })
 
     const hasResults = visible.length > 0
-
-    function handleQueryInput(event) {
-        onQueryChange(event.target.value)
-    }
-
-    function handleClearQuery() {
-        onQueryChange("")
-    }
 
     return (
         <aside
@@ -75,34 +55,6 @@ function ConversationsRail({
                     <SquarePen className="size-4" />
                 </Link>
             </header>
-
-            {/* Search */}
-            <div className="px-3 pt-2.5">
-                <label className="relative block">
-                    <span className="sr-only">Search conversations</span>
-                    <Search
-                        aria-hidden="true"
-                        className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400"
-                    />
-                    <input
-                        type="search"
-                        value={query}
-                        onChange={handleQueryInput}
-                        placeholder="Search conversations"
-                        className="w-full rounded-full bg-gray-100 py-2 pl-9 pr-9 text-sm text-gray-900 outline-none transition-shadow placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-fuchsia-300"
-                    />
-                    {query ? (
-                        <button
-                            type="button"
-                            onClick={handleClearQuery}
-                            aria-label="Clear search"
-                            className="absolute right-2 top-1/2 grid size-6 -translate-y-1/2 place-items-center rounded-full text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-700"
-                        >
-                            <X className="size-3.5" />
-                        </button>
-                    ) : null}
-                </label>
-            </div>
 
             {/* Filter chips */}
             <div className="flex items-center gap-1.5 px-3 py-2.5">
