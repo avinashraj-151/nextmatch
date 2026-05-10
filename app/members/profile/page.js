@@ -27,12 +27,12 @@ export default async function Profile() {
     }
 
     const member = result.data
-    const displayName = member.name?.trim() || "Member"
     const galleryPhotos = buildGalleryPhotos(member)
     const completion = buildCompletion(member, galleryPhotos.length)
     const memberDays = daysSince(member.createdAt)
     const joinedOn = formatJoinedOn(member.createdAt)
     const bio = member.description?.trim() ?? ""
+    const isProfileComplete = completion.pct >= 100
 
     return (
         <section aria-labelledby="profile-page-title" className="space-y-8">
@@ -45,10 +45,14 @@ export default async function Profile() {
                 completion={completion}
             />
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-                <ProfileAbout bio={bio} className="lg:col-span-2" />
-                <ProfileStrength completion={completion} />
-            </div>
+            {isProfileComplete ? (
+                <ProfileAbout bio={bio} />
+            ) : (
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                    <ProfileAbout bio={bio} className="lg:col-span-2" />
+                    <ProfileStrength completion={completion} />
+                </div>
+            )}
 
             <ProfileDetails member={member} />
 

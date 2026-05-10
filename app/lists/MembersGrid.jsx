@@ -6,7 +6,6 @@ import {
     fetchLikedMembers,
 } from "@/app/actions/likeaction"
 import MemberCard from "@/components/component/MemberCard"
-import MemberCardSkeleton from "@/components/component/MemberCardSkeleton"
 
 const TAB_META = {
     source: {
@@ -36,35 +35,6 @@ const TAB_META = {
         },
         fetchingLabel: "Loading your mutual matches…",
     },
-}
-
-// ─── Grid skeleton shown while Suspense is pending ──────────────────────────
-export function MembersGridSkeleton({ label = "Fetching members…" }) {
-    return (
-        <div className="mt-8 space-y-4">
-            {/* Animated fetching indicator */}
-            <div className="flex items-center gap-2.5">
-                <span className="relative flex size-2.5">
-                    <span className="absolute inline-flex size-full animate-ping rounded-full bg-fuchsia-400 opacity-75" />
-                    <span className="relative inline-flex size-2.5 rounded-full bg-fuchsia-500" />
-                </span>
-                <p className="text-sm font-medium text-gray-400">{label}</p>
-            </div>
-
-            {/* Shimmer card grid */}
-            <ul
-                aria-busy="true"
-                aria-label="Loading members"
-                className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 lg:gap-6 xl:grid-cols-5"
-            >
-                {Array.from({ length: 10 }).map((_, i) => (
-                    <li key={i}>
-                        <MemberCardSkeleton />
-                    </li>
-                ))}
-            </ul>
-        </div>
-    )
 }
 
 // ─── Async server component — does the actual data fetching ─────────────────

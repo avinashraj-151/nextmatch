@@ -2,6 +2,7 @@
 
 import {
     CalendarHeart,
+    Camera,
     MapPin,
     Pencil,
     Sparkles,
@@ -9,11 +10,17 @@ import {
 } from "lucide-react"
 
 import { calculateAge, cn, getInitials, isNewMember } from "@/lib/utils"
+import { useAvatar } from "@/app/_providers/AvatarProvider"
 import { formatJoinedAgo } from "../_lib/profile"
+import ChangeProfilePhotoDialog from "./ChangeProfilePhotoDialog"
 import EditProfileDialog from "./EditProfileDialog"
 
 const ProfileHero = ({ member }) => {
+    const { avatar, setAvatar } = useAvatar()
+
     if (!member) return null
+
+    const displayImage = avatar
 
     const displayName = member.name?.trim() || "Member"
     const age = calculateAge(member.dateOfBirth)
@@ -25,9 +32,9 @@ const ProfileHero = ({ member }) => {
     return (
         <header className="relative overflow-hidden rounded-3xl bg-white ring-1 ring-black/5 shadow-sm shadow-fuchsia-900/5">
             <div className="relative aspect-21/9 w-full overflow-hidden bg-linear-to-br from-rose-200 via-fuchsia-200 to-violet-200">
-                {member.image ? (
+                {displayImage ? (
                     <img
-                        src={member.image}
+                        src={displayImage}
                         alt=""
                         loading="eager"
                         decoding="async"
@@ -57,11 +64,11 @@ const ProfileHero = ({ member }) => {
 
             <div className="relative px-5 pb-6 sm:px-8 sm:pb-8">
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:gap-6">
-                    <div className="-mt-16 sm:-mt-20">
+                    <div className="-mt-16 relative sm:-mt-20">
                         <div className="relative size-32 overflow-hidden rounded-3xl bg-linear-to-br from-rose-100 via-fuchsia-100 to-violet-100 ring-4 ring-white shadow-xl shadow-fuchsia-900/15 sm:size-40">
-                            {member.image ? (
+                            {displayImage ? (
                                 <img
-                                    src={member.image}
+                                    src={displayImage}
                                     alt={`Photo of ${displayName}`}
                                     loading="eager"
                                     decoding="async"
@@ -75,6 +82,31 @@ const ProfileHero = ({ member }) => {
                                 </div>
                             )}
                         </div>
+
+                        {/* Camera overlay button */}
+                        <ChangeProfilePhotoDialog
+                            member={member}
+                            currentImage={displayImage}
+                            onImageChange={setAvatar}
+                            trigger={
+                                <button
+                                    type="button"
+                                    className={cn(
+                                        "absolute -bottom-1 -right-1 z-10",
+                                        "flex size-9 items-center justify-center rounded-xl sm:size-10 sm:rounded-2xl",
+                                        "bg-gradient-to-br from-rose-500 via-fuchsia-600 to-violet-600",
+                                        "ring-[3px] ring-white shadow-lg shadow-fuchsia-900/25",
+                                        "transition-all duration-200",
+                                        "hover:scale-110 hover:shadow-xl hover:shadow-fuchsia-900/30",
+                                        "active:scale-95",
+                                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fuchsia-500/60 focus-visible:ring-offset-2",
+                                    )}
+                                    aria-label="Change profile photo"
+                                >
+                                    <Camera className="size-4 text-white sm:size-[18px]" />
+                                </button>
+                            }
+                        />
                     </div>
 
                     <div className="flex min-w-0 flex-1 flex-col gap-3 sm:pb-1">

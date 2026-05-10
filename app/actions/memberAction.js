@@ -1,5 +1,6 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
 import { auth } from "@/lib/schemas/auth"
 
 import prisma from "@/lib/prisma"
@@ -147,5 +148,284 @@ export async function updateMemberProfile(data) {
     return { success: true, data: updated }
   } catch (error) {
     return { error: "Failed to update profile. Please try again." }
+  }
+}
+
+export async function deletePhoto(photoId) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return { error: "Unauthorized" }
+    }
+
+    const member = await prisma.member.findUnique({
+      where: { userId: session.user.id },
+    })
+
+    if (!member) {
+      return { error: "Member not found" }
+    }
+    const photo = await prisma.photo.findUnique({
+      where: { id: photoId },
+    })
+    if (member.id != photo.memberId) {
+      return { error: "Unauthorized" }
+    }
+
+    // Delete from Supabase Storage if publicId exists
+    if (photo.publicId) {
+      const { supabase } = await import("@/lib/supabase")
+      await supabase.storage.from("photos").remove([photo.publicId])
+    }
+
+    await prisma.photo.delete({
+      where: { id: photoId },
+    })
+
+    // If this was the profile image, clear it
+    if (member.image === photo.url) {
+      await prisma.member.update({
+        where: { id: member.id },
+        data: { image: null },
+      })
+    }
+
+    revalidatePath("/members/profile")
+    return { success: true }
+
+  } catch (error) {
+    console.log(error)
+    return { error: "Failed to delete photo. Please try again" }
+  }
+}
+
+
+export async function uplodeUserPhoto(formData) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return { error: "Unauthorized" }
+    }
+
+    const member = await prisma.member.findUnique({
+      where: { userId: session.user.id },
+    })
+    if (!member) {
+      return { error: "Member not found" }
+    }
+
+    const file = formData.get("file")
+    if (!file || !(file instanceof File)) {
+      return { error: "No file provided" }
+    }
+
+    // 1. Upload to Supabase Storage
+    const { supabase } = await import("@/lib/supabase")
+    const ext = file.name.split(".").pop()
+    const filePath = `${member.id}/${Date.now()}.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from("photos")
+      .upload(filePath, file, {
+        contentType: file.type,
+        upsert: false,
+      })
+
+    if (uploadError) {
+      console.log("Upload error:", uploadError)
+      return { error: "Failed to upload image to storage" }
+    }
+
+    // 2. Get the public URL
+    const { data: urlData } = supabase.storage
+      .from("photos")
+      .getPublicUrl(filePath)
+
+    const publicUrl = urlData.publicUrl
+
+    // 3. Save Photo record in the database
+    await prisma.photo.create({
+      data: {
+        url: publicUrl,
+        publicId: filePath,
+        memberId: member.id,
+      },
+    })
+
+    // 4. If member has no profile image yet, set this as their profile image
+    if (!member.image) {
+      await prisma.member.update({
+        where: { id: member.id },
+        data: { image: publicUrl },
+      })
+    }
+
+    revalidatePath("/members/profile")
+
+    return { success: true }
+
+  } catch (error) {
+    console.log(error)
+    return { error: "Failed to upload photo. Please try again" }
+  }
+}
+
+
+export async function setProfileImage(photoId) {
+  try {
+    const session = await auth()
+    if (!session?.user) {
+      return { error: "Unauthorized" }
+    }
+
+    return { success: true }
+
+  } catch (error) {
+    console.log(error)
+    return { error: "Failed to set profile image" }
+  }
+}
+
+
+// Profile image dedicated upload — capped at 240KB.
+const PROFILE_IMAGE_MAX_BYTES = 240 * 1024
+const PROFILE_IMAGE_ACCEPTED = ["image/jpeg", "image/png", "image/webp"]
+const STORAGE_PATH_MARKER = "/storage/v1/object/public/photos/"
+
+// Extract the bucket-relative storage path from a Supabase public URL.
+const extractStoragePath = (publicUrl) => {
+  if (!publicUrl) return null
+  const idx = publicUrl.indexOf(STORAGE_PATH_MARKER)
+  if (idx === -1) return null
+  return publicUrl.slice(idx + STORAGE_PATH_MARKER.length)
+}
+
+// Remove the previous profile image from storage only when it isn't also
+// referenced by a Photo row (i.e. it was a profile-only upload, not a
+// gallery photo that the member chose as their avatar).
+const cleanupOrphanProfileImage = async (memberId, previousUrl, supabase) => {
+  if (!previousUrl) return
+  const stillReferenced = await prisma.photo.findFirst({
+    where: { memberId, url: previousUrl },
+    select: { id: true },
+  })
+  if (stillReferenced) return
+  const path = extractStoragePath(previousUrl)
+  if (!path) return
+  await supabase.storage.from("photos").remove([path])
+}
+
+export async function updateProfileImage(formData) {
+  try {
+    const session = await auth()
+    if (!session?.user) {
+      return { error: "Unauthorized" }
+    }
+
+    const member = await prisma.member.findUnique({
+      where: { userId: session.user.id },
+    })
+    if (!member) {
+      return { error: "Member not found" }
+    }
+
+    const file = formData.get("file")
+    if (!file || !(file instanceof File)) {
+      return { error: "No file provided" }
+    }
+
+    if (!PROFILE_IMAGE_ACCEPTED.includes(file.type)) {
+      return { error: "Please upload a JPEG, PNG or WebP image." }
+    }
+
+    if (file.size > PROFILE_IMAGE_MAX_BYTES) {
+      return { error: "File is too large. Max size is 240 KB." }
+    }
+
+    const { supabase } = await import("@/lib/supabase")
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase()
+    const filePath = `${member.id}/profile-${Date.now()}.${ext}`
+
+    const { error: uploadError } = await supabase.storage
+      .from("photos")
+      .upload(filePath, file, {
+        contentType: file.type,
+        upsert: false,
+      })
+
+    if (uploadError) {
+      console.log("Profile image upload error:", uploadError)
+      return { error: "Failed to upload image to storage" }
+    }
+
+    const { data: urlData } = supabase.storage
+      .from("photos")
+      .getPublicUrl(filePath)
+
+    const publicUrl = urlData.publicUrl
+    const previousImage = member.image
+
+    await prisma.member.update({
+      where: { id: member.id },
+      data: { image: publicUrl },
+    })
+
+    // Best-effort cleanup of the old profile-only image. Storage failures
+    // shouldn't break the user-facing update, so we log and move on.
+    if (previousImage && previousImage !== publicUrl) {
+      try {
+        await cleanupOrphanProfileImage(member.id, previousImage, supabase)
+      } catch (cleanupErr) {
+        console.log("Profile image cleanup error:", cleanupErr)
+      }
+    }
+
+    revalidatePath("/members/profile")
+    return { success: true, url: publicUrl }
+
+  } catch (error) {
+    console.log(error)
+    return { error: "Failed to update profile photo. Please try again" }
+  }
+}
+
+export async function removeProfileImage() {
+  try {
+    const session = await auth()
+    if (!session?.user) {
+      return { error: "Unauthorized" }
+    }
+
+    const member = await prisma.member.findUnique({
+      where: { userId: session.user.id },
+    })
+    if (!member) {
+      return { error: "Member not found" }
+    }
+
+    if (!member.image) {
+      return { success: true }
+    }
+
+    const previousImage = member.image
+
+    await prisma.member.update({
+      where: { id: member.id },
+      data: { image: null },
+    })
+
+    try {
+      const { supabase } = await import("@/lib/supabase")
+      await cleanupOrphanProfileImage(member.id, previousImage, supabase)
+    } catch (cleanupErr) {
+      console.log("Profile image cleanup error:", cleanupErr)
+    }
+
+    revalidatePath("/members/profile")
+    return { success: true }
+
+  } catch (error) {
+    console.log(error)
+    return { error: "Failed to remove profile photo. Please try again" }
   }
 }

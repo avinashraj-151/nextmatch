@@ -32,7 +32,6 @@ model User {
   email String @unique
   emailVerified DateTime?
   passwordHash String?
-  image String?
   accounts Account[]
   members  Member?
 }
@@ -42,11 +41,14 @@ model Member{
   id String @id @default(cuid())
   userId String @unique
   name String
-  gender String
-  dateOfBirth DateTime
-  description String
-  city String
-  country String
+  // Profile fields are filled in after signup via the profile-edit
+  // dialog. Keeping them optional lets registration create a stub
+  // Member row with just `userId` + `name`.
+  gender String?
+  dateOfBirth DateTime?
+  description String?
+  city String?
+  country String?
   image String?
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
@@ -54,6 +56,8 @@ model Member{
   photos Photo[]
   sourceLikes Like[] @relation("SourceLikes")
   targetLikes Like[] @relation("TargetLikes")
+  senderMessages Message[] @relation("SenderMessages")
+  recipientMessages Message[] @relation("RecipientMessages")
 }
 
 model Photo{
@@ -71,4 +75,18 @@ model Like{
   targetUserId String
   targetMember Member @relation("TargetLikes", fields: [targetUserId], references: [userId], onDelete: Cascade) 
   @@id([sourceUserId, targetUserId])
+}
+
+model Message{
+  id String @id @default(cuid())
+  text String
+  created DateTime @default(now())
+  senderId String?
+  recipientId String?
+  sender Member? @relation("SenderMessages",fields: [senderId], references: [userId], onDelete:SetNull)
+  recipient Member? @relation("RecipientMessages",fields: [recipientId], references: [userId], onDelete:SetNull)
+  dateRead DateTime?
+  senderDeleted Boolean @default(false)
+  recipientDeleted Boolean @default(false)
+  edited Boolean? @default(false)
 }

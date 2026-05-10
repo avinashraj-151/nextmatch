@@ -1,10 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
     ChevronDown,
+    ChevronLeft,
+    ChevronRight,
     ChevronUp,
     Images,
+    X,
 } from "lucide-react"
 
 import {
@@ -84,6 +87,40 @@ const PhotoGallery = ({
         if (activeIndex == null) return
         setActiveIndex((prev) => (prev + 1) % total)
     }
+
+    // Keyboard nav while the lightbox is open. Escape is handled by Radix.
+    useEffect(() => {
+        if (activeIndex == null) return
+
+        const handleKeyDown = (e) => {
+            if (e.key === "ArrowLeft") {
+                e.preventDefault()
+                handlePrev()
+            } else if (e.key === "ArrowRight") {
+                e.preventDefault()
+                handleNext()
+            }
+        }
+
+        window.addEventListener("keydown", handleKeyDown)
+        return () => window.removeEventListener("keydown", handleKeyDown)
+    }, [activeIndex, total])
+
+    // Preload the immediate neighbors so swaps feel instant.
+    useEffect(() => {
+        if (activeIndex == null || total < 2) return
+
+        const neighbors = [
+            photos[(activeIndex + 1) % total],
+            photos[(activeIndex - 1 + total) % total],
+        ]
+
+        neighbors.forEach((photo) => {
+            if (!photo?.url) return
+            const img = new window.Image()
+            img.src = photo.url
+        })
+    }, [activeIndex, total, photos])
 
     return (
         <section aria-labelledby="photo-gallery-title">
@@ -192,19 +229,61 @@ const PhotoGallery = ({
             ) : null}
 
             <Dialog open={activePhoto != null} onOpenChange={handleDialogChange}>
-                <DialogContent className="max-w-3xl overflow-hidden border-0 bg-black p-0 ring-1 ring-white/10 sm:max-w-3xl">
+                <DialogContent
+                    showCloseButton={false}
+                    className={cn(
+                        "w-[calc(100vw-2rem)] max-w-5xl overflow-hidden rounded-2xl border-0 p-0 ring-1 ring-white/10 shadow-2xl shadow-black/60",
+                        // Layered black surface with brand-tinted corners.
+                        "bg-[radial-gradient(120%_140%_at_0%_0%,rgba(244,63,94,0.18)_0%,transparent_55%),radial-gradient(120%_140%_at_100%_100%,rgba(124,58,237,0.20)_0%,transparent_55%),linear-gradient(135deg,#0b0a14_0%,#08080d_100%)]!",
+                        "sm:max-w-5xl",
+                    )}
+                >
                     <DialogTitle className="sr-only">
                         Photo {activeIndex != null ? activeIndex + 1 : ""} of {displayName}
                     </DialogTitle>
 
                     {activePhoto ? (
                         <div className="relative">
+                            {/* ── Image ── */}
                             <img
+                                key={activeIndex}
                                 src={activePhoto.url}
                                 alt={`Photo ${activeIndex + 1} of ${displayName}`}
-                                className="block max-h-[80vh] w-full object-contain"
+                                className="block max-h-[82vh] w-full object-contain animate-in fade-in zoom-in-95 duration-300"
                             />
 
+                            {/* ── Top bar overlay ── */}
+                            <div
+                                aria-hidden="true"
+                                className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-linear-to-b from-black/70 via-black/25 to-transparent"
+                            />
+                            <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-3 px-4 py-3.5 sm:px-5 sm:py-4">
+                                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-[11px] font-semibold tracking-wider text-white ring-1 ring-white/20 backdrop-blur">
+                                    <span className="bg-linear-to-r from-rose-300 via-fuchsia-200 to-violet-200 bg-clip-text uppercase text-transparent">
+                                        Photo
+                                    </span>
+                                    <span className="text-white/95">
+                                        {activeIndex + 1}{" "}
+                                        <span className="text-white/45">of</span>{" "}
+                                        {total}
+                                    </span>
+                                </span>
+
+                                <button
+                                    type="button"
+                                    onClick={handleClose}
+                                    aria-label="Close photo viewer"
+                                    className={cn(
+                                        "inline-flex size-9 items-center justify-center rounded-full bg-white/10 text-white outline-none ring-1 ring-white/20 backdrop-blur",
+                                        "transition-all duration-200 hover:scale-105 hover:bg-white/20",
+                                        "focus-visible:ring-2 focus-visible:ring-fuchsia-400/70",
+                                    )}
+                                >
+                                    <X className="size-4" />
+                                </button>
+                            </div>
+
+                            {/* ── Side navigation ── */}
                             {total > 1 ? (
                                 <>
                                     <button
@@ -212,29 +291,55 @@ const PhotoGallery = ({
                                         onClick={handlePrev}
                                         aria-label="Previous photo"
                                         className={cn(
-                                            "absolute left-3 top-1/2 -translate-y-1/2 inline-flex size-9 items-center justify-center rounded-full bg-white/90 text-gray-900 outline-none ring-1 ring-black/10 backdrop-blur",
-                                            "transition-all duration-200 hover:scale-105 hover:bg-white",
-                                            "focus-visible:ring-2 focus-visible:ring-fuchsia-500/60",
+                                            "absolute left-3 top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white outline-none ring-1 ring-white/20 backdrop-blur sm:left-4 sm:size-12",
+                                            "transition-all duration-200 hover:scale-105 hover:bg-white/20 active:scale-95",
+                                            "focus-visible:ring-2 focus-visible:ring-fuchsia-400/70",
                                         )}
                                     >
-                                        <ChevronDown className="size-4 rotate-90" />
+                                        <ChevronLeft className="size-5 sm:size-6" />
                                     </button>
                                     <button
                                         type="button"
                                         onClick={handleNext}
                                         aria-label="Next photo"
                                         className={cn(
-                                            "absolute right-3 top-1/2 -translate-y-1/2 inline-flex size-9 items-center justify-center rounded-full bg-white/90 text-gray-900 outline-none ring-1 ring-black/10 backdrop-blur",
-                                            "transition-all duration-200 hover:scale-105 hover:bg-white",
-                                            "focus-visible:ring-2 focus-visible:ring-fuchsia-500/60",
+                                            "absolute right-3 top-1/2 inline-flex size-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 text-white outline-none ring-1 ring-white/20 backdrop-blur sm:right-4 sm:size-12",
+                                            "transition-all duration-200 hover:scale-105 hover:bg-white/20 active:scale-95",
+                                            "focus-visible:ring-2 focus-visible:ring-fuchsia-400/70",
                                         )}
                                     >
-                                        <ChevronDown className="size-4 -rotate-90" />
+                                        <ChevronRight className="size-5 sm:size-6" />
                                     </button>
+                                </>
+                            ) : null}
 
-                                    <span className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-[11px] font-semibold text-white ring-1 ring-white/10 backdrop-blur">
-                                        {activeIndex + 1} / {total}
-                                    </span>
+                            {/* ── Bottom bar: counter + brand progress strip ── */}
+                            {total > 1 ? (
+                                <>
+                                    <div
+                                        aria-hidden="true"
+                                        className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-black/70 via-black/25 to-transparent"
+                                    />
+                                    <div className="absolute inset-x-0 bottom-0 flex flex-col items-center gap-2.5 px-4 py-4 sm:py-5">
+                                        <span className="rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold tracking-wide text-white ring-1 ring-white/20 backdrop-blur">
+                                            {activeIndex + 1} / {total}
+                                        </span>
+                                        <div
+                                            role="progressbar"
+                                            aria-valuemin={1}
+                                            aria-valuemax={total}
+                                            aria-valuenow={activeIndex + 1}
+                                            aria-label="Photo position"
+                                            className="h-1 w-44 overflow-hidden rounded-full bg-white/15 ring-1 ring-white/10"
+                                        >
+                                            <div
+                                                style={{
+                                                    width: `${((activeIndex + 1) / total) * 100}%`,
+                                                }}
+                                                className="h-full rounded-full bg-linear-to-r from-rose-400 via-fuchsia-400 to-violet-400 transition-[width] duration-300 ease-out"
+                                            />
+                                        </div>
+                                    </div>
                                 </>
                             ) : null}
                         </div>
